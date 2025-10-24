@@ -1,0 +1,218 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Manage Students</title>
+  <link rel="stylesheet" href="{% static 'css/style.css' %}">
+  <style>
+    body {
+      font-family: 'Segoe UI', Arial, sans-serif;
+      background: #f4f6f9;
+      padding: 30px;
+    }
+
+    h2 {
+      text-align: center;
+      color: #2c3e50;
+      margin-bottom: 25px;
+      font-size: 28px;
+      letter-spacing: 1px;
+    }
+
+    .search-bar {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    .search-bar input {
+      width: 300px;
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      font-size: 16px;
+    }
+
+    .search-bar button {
+      padding: 10px 15px;
+      border: none;
+      background: #2980b9;
+      color: white;
+      font-size: 16px;
+      border-radius: 6px;
+      cursor: pointer;
+      margin-left: 8px;
+    }
+
+    .search-bar button:hover { background: #3498db; }
+
+    .back {
+      background: #2980b9;
+      color: white;
+      padding: 10px 18px;
+      border-radius: 6px;
+      text-decoration: none;
+      display: inline-block;
+      margin-bottom: 20px;
+      font-weight: 600;
+      transition: 0.3s;
+    }
+    .back:hover { background: #3498db; }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: #fff;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.1);
+    }
+
+    th, td {
+      padding: 15px;
+      text-align: center;
+      border-bottom: 1px solid #e0e0e0;
+    }
+
+    th {
+      background: #2c3e50;
+      color: white;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    img {
+      width: 120px;
+      height: 120px;
+      border-radius: 10px;
+      object-fit: cover;
+      border: 3px solid #ddd;
+      transition: transform 0.3s ease;
+    }
+
+    img:hover { transform: scale(1.1); }
+
+    .btn {
+      padding: 8px 14px;
+      border-radius: 5px;
+      text-decoration: none;
+      color: white;
+      font-weight: 500;
+      transition: 0.3s;
+    }
+
+    .edit { background: #27ae60; }
+    .delete { background: #c0392b; }
+    .recapture { background: #f39c12; }
+    .btn:hover { opacity: 0.85; }
+
+    td.actions {
+      display: flex;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    tr:hover {
+      background: #f9f9f9;
+      transition: 0.3s;
+    }
+
+    .pagination {
+      margin-top: 25px;
+      text-align: center;
+    }
+
+    .pagination a {
+      padding: 8px 12px;
+      background: #ecf0f1;
+      margin: 0 4px;
+      text-decoration: none;
+      color: #2c3e50;
+      border-radius: 4px;
+      font-weight: 600;
+    }
+
+    .pagination a.active {
+      background: #2980b9;
+      color: white;
+    }
+
+    .pagination a:hover {
+      background: #3498db;
+      color: white;
+    }
+  </style>
+</head>
+<body>
+
+  <a href="{% url 'home' %}" class="back">⬅ Back to Home</a>
+  <h2>Registered Students</h2>
+
+  <div class="search-bar">
+    <form method="get" action="">
+      <input type="text" name="q" value="{{ request.GET.q }}" placeholder="Search by Name, Father Name, or Surname">
+      <button type="submit">Search</button>
+    </form>
+  </div>
+
+  <table>
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Student Image</th>
+        <th>Name</th>
+        <th>Father Name</th>
+        <th>Surname</th>
+        <th>Phone</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+
+    <tbody>
+      {% for student in students %}
+      <tr>
+        <td>{{ student.id }}</td>
+        <td>
+          {% if student.image %}
+            <img src="{{ student.image.url }}" alt="{{ student.name }}">
+          {% else %}
+            <span style="color: #888;">No Image</span>
+          {% endif %}
+        </td>
+        <td>{{ student.name }}</td>
+        <td>{{ student.father_name }}</td>
+        <td>{{ student.surname }}</td>
+        <td>{{ student.phone_no }}</td>
+        <td class="actions">
+          <a href="{% url 'edit_student' student.id %}" class="btn edit">Edit</a>
+          <a href="{% url 'recapture_image' student.id %}" class="btn recapture">Recapture</a>
+          <a href="{% url 'delete_student' student.id %}" class="btn delete" onclick="return confirm('Delete this student?');">Delete</a>
+        </td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="7" style="padding:20px; color:#888;">No students found.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <!-- Pagination -->
+  <div class="pagination">
+    {% if students.has_previous %}
+      <a href="?q={{ request.GET.q }}&page={{ students.previous_page_number }}">Previous</a>
+    {% endif %}
+
+    {% for page_num in students.paginator.page_range %}
+      {% if students.number == page_num %}
+        <a class="active" href="?q={{ request.GET.q }}&page={{ page_num }}">{{ page_num }}</a>
+      {% else %}
+        <a href="?q={{ request.GET.q }}&page={{ page_num }}">{{ page_num }}</a>
+      {% endif %}
+    {% endfor %}
+
+    {% if students.has_next %}
+      <a href="?q={{ request.GET.q }}&page={{ students.next_page_number }}">Next</a>
+    {% endif %}
+  </div>
+
+</body>
+</html>

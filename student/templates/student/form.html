@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title> AI Face Recognition - Student Registration</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: linear-gradient(135deg, #56959d, #508bbc);
+      color: #fff;
+      text-align: center;
+      padding: 30px;
+    }
+
+    h1 {
+      color: #1b4d53;
+      margin-bottom: 10px;
+    }
+
+    .container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+
+    video {
+      border-radius: 12px;
+      border: 3px solid #00ffcc;
+      width: 480px;
+      height: 360px;
+      margin-top: 20px;
+      display: none;
+    }
+
+    #previewImage {
+      width: 200px;
+      border-radius: 10px;
+      border: 2px solid #00ffcc;
+      margin-top: 15px;
+      display: none;
+    }
+
+    form {
+      background: rgba(255, 255, 255, 0.08);
+      padding: 20px;
+      border-radius: 10px;
+      display: inline-block;
+      width: 350px;
+      margin-top: 20px;
+      text-align: left;
+    }
+
+    label {
+      color: #131516;
+      font-size: 14px;
+      display: block;
+      margin: 8px 0 5px;
+    }
+
+    input {
+      width: 100%;
+      padding: 8px;
+      border-radius: 6px;
+      border: none;
+      margin-bottom: 10px;
+      font-size: 14px;
+    }
+
+    button {
+      background: #3089cd;
+      color: #101820;
+      border: none;
+      padding: 10px 16px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: bold;
+      margin: 8px;
+      transition: 0.2s;
+    }
+
+    button:hover { background: #00cc99; }
+
+    #resultBox {
+      margin-top: 20px;
+      font-size: 1.1em;
+      padding: 10px;
+      border-radius: 8px;
+      min-width: 250px;
+      display: inline-block;
+    }
+
+    .known {
+      background-color: rgba(0, 255, 153, 0.1);
+      border: 1px solid #00ff99;
+      color: #00ff99;
+    }
+
+    .unknown {
+      background-color: rgba(255, 70, 70, 0.1);
+      border: 1px solid #ff4444;
+      color: #ff4444;
+    }
+
+    .success {
+      background-color: rgba(0, 255, 0, 0.15);
+      border: 1px solid #00ff00;
+      color: #00ff00;
+    }
+  </style>
+</head>
+<body>
+  <h1>🧠 AI Face Recognition - Student Registration</h1>
+
+  <div class="container">
+    <form id="studentForm">
+      <label>Name:</label>
+      <input type="text" id="name" required>
+
+      <label>Father Name:</label>
+      <input type="text" id="father_name" required>
+
+      <label>Surname:</label>
+      <input type="text" id="surname" required>
+
+      <label>Phone Number:</label>
+      <input type="text" id="phone_no" required>
+
+      <button type="button" id="openCamera"> Open Camera</button>
+      <button type="button" id="captureBtn"> Capture</button>
+      <button type="button" id="saveBtn"> Save Data</button>
+    </form>
+
+    <video id="video" autoplay playsinline></video>
+    <img id="previewImage" alt="Captured preview" />
+
+    <div id="resultBox">Status: Waiting for camera...</div>
+  </div>
+
+  <script>
+    const video = document.getElementById('video');
+    const openBtn = document.getElementById('openCamera');
+    const captureBtn = document.getElementById('captureBtn');
+    const saveBtn = document.getElementById('saveBtn');
+    const resultBox = document.getElementById('resultBox');
+    const preview = document.getElementById('previewImage');
+    let capturedImage = null;
+    let recognitionInterval = null;
+
+    // --- Open camera ---
+    openBtn.addEventListener('click', () => {
+      navigator.mediaDevices.getUserMedia({ video: true })
+        .then(stream => {
+          video.srcObject = stream;
+          video.style.display = "block";
+          resultBox.textContent = "Camera activated...";
+          startRecognition();
+        })
+        .catch(err => alert("Camera access error: " + err));
+    });
+
+    // --- Real-time face recognition ---
+    function startRecognition() {
+      if (recognitionInterval) clearInterval(recognitionInterval);
+
+      recognitionInterval = setInterval(() => {
+        if (video.videoWidth === 0) return;
+        const canvas = document.createElement('canvas');
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        canvas.getContext('2d').drawImage(video, 0, 0);
+        const frame = canvas.toDataURL('image/jpeg');
+
+        fetch('/check_face/', {
+          method: 'POST',
+          headers: { 'X-CSRFToken': getCookie('csrftoken') },
+          body: new URLSearchParams({ image: frame })
+        })
+        .then(res => res.json())
+        .then(data => {
+          if (data.status === 'known') {
+            resultBox.textContent = ` Recognized: ${data.name}`;
+            resultBox.className = "known";
+          } else {
+            resultBox.textContent = ' New face detected.';
+            resultBox.className = "unknown";
+          }
+        })
+        .catch(() => {});
+      }, 2000);
+    }
+
+    // --- Capture image ---
+    captureBtn.addEventListener('click', () => {
+      const canvas = document.createElement('canvas');
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      canvas.getContext('2d').drawImage(video, 0, 0);
+      capturedImage = canvas.toDataURL('image/jpeg');
+      preview.src = capturedImage;
+      preview.style.display = "block";
+      resultBox.textContent = " Image captured successfully!";
+      resultBox.className = "success";
+    });
+
+    // --- Save data ---
+    saveBtn.addEventListener('click', () => {
+      if (!capturedImage) {
+        alert("Please capture an image first!");
+        return;
+      }
+
+      const data = new URLSearchParams({
+        name: document.getElementById('name').value,
+        father_name: document.getElementById('father_name').value,
+        surname: document.getElementById('surname').value,
+        phone_no: document.getElementById('phone_no').value,
+        image: capturedImage
+      });
+
+      fetch('/add/', {
+        method: 'POST',
+        headers: { 'X-CSRFToken': getCookie('csrftoken') },
+        body: data
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.status === 'success') {
+          resultBox.textContent = "🎉 Student data saved successfully!";
+          resultBox.className = "success";
+        } else {
+          resultBox.textContent = " " + data.message;
+          resultBox.className = "unknown";
+        }
+        
+      });
+    
+    });
+
+    // --- Helper: Get CSRF Token ---
+    function getCookie(name) {
+      let cookieValue = null;
+      if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let cookie of cookies) {
+          cookie = cookie.trim();
+          if (cookie.startsWith(name + '=')) {
+            cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+            break;
+          }
+        }
+      }
+      return cookieValue;
+    }
+  </script>
+</body>
+</html>

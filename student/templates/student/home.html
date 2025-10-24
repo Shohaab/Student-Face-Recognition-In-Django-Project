@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Face Recognition and Notification System</title>
+    <style>
+      body {
+        font-family: "Segoe UI", sans-serif;
+        background: linear-gradient(135deg, #4fc1e3, #6b97d4);
+        color: white;
+        text-align: center;
+        height: 100vh;
+        margin: 0;
+      }
+      h1 {
+        padding: 30px 0;
+        font-size: 2rem;
+        font-weight: bold;
+      }
+      .container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 20px;
+        margin-top: 60px;
+      }
+      .module {
+        background: rgba(255, 255, 255, 0.1);
+        border: 2px solid white;
+        border-radius: 15px;
+        padding: 30px 50px;
+        cursor: pointer;
+        font-size: 1.2rem;
+        transition: all 0.3s;
+      }
+      .module:hover {
+        background: white;
+        color: #005c97;
+        transform: scale(1.05);
+      }
+      a {
+        text-decoration: none;
+        color: inherit;
+      }
+    </style>
+  </head>
+  <body>
+    <h1> AI Based Real Time Face Recognition & Notification System</h1>
+
+    <div class="container">
+      <a href="{% url 'add_student' %}">
+        <div class="module">➕ Add New Student</div>
+      </a>
+
+      <!-- Add more blocks later like -->
+      <a href="{% url 'view_students' %}">
+        <div class="module">📊 View Students</div>
+      </a>
+      <!-- <div class="module">🧠 Train Model</div> -->
+
+       <div class="module">Recognize Students & Notify Parents</div>
+    </div>
+  </body>
+</html>
